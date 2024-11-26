@@ -7,10 +7,9 @@ export CMAKE_SYSTEM_PREFIX_PATH=$PREFIX
 # clear LDFLAGS flags because they contain sWASM_BIGINT
 export LDFLAGS=""
 
-
 # Configure step
-emcmake cmake ${CMAKE_ARGS} -S ../llvm -B .         \
-    -DCMAKE_BUILD_TYPE=MinSizeRel                   \
+cmake ${CMAKE_ARGS} -S ../llvm -B .                 \
+    -DCMAKE_BUILD_TYPE=Debug                        \
     -DCMAKE_PREFIX_PATH=$PREFIX                     \
     -DCMAKE_INSTALL_PREFIX=$PREFIX                  \
     -DLLVM_HOST_TRIPLE=wasm32-unknown-emscripten    \
@@ -22,13 +21,14 @@ emcmake cmake ${CMAKE_ARGS} -S ../llvm -B .         \
     -DLLVM_ENABLE_PROJECTS="clang;lld"              \
     -DCMAKE_VERBOSE_MAKEFILE=ON                     \
     -DLLVM_ENABLE_THREADS=OFF                       \
-    -DCMAKE_CXX_FLAGS="-Dwait4=__syscall_wait4 -isystem $EMSCRIPTEN_FORGE_EMSDK_DIR/upstream/emscripten/cache/sysroot/include/c++/v1"
+    -DCMAKE_TOOLCHAIN_FILE=$EMSCRIPTEN_FORGE_EMSDK_DIR/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake \
+    -DCMAKE_CXX_FLAGS="-Dwait4=__syscall_wait4"
 
 # Build step
-emmake make -j4
+cmake --build . --target clang clang-repl lld --parallel 8
 
 # Install step
-emmake make install
+make install
 
 # Copy all files with ".wasm" extension to $PREFIX/bin
 cp $SRC_DIR/build/bin/*.wasm $PREFIX/bin
